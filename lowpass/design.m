@@ -18,3 +18,5 @@ normalizedFrequency = cutoff / (sample / 2);
 [num, den] = butter(order, normalizedFrequency);
 
 transferFunction = filt(num, den, 1/sample);
+
+bode(transferFunction);
