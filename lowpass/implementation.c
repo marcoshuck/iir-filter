@@ -13,6 +13,7 @@
 #endif
 
 #include <avr/io.h>
+#include <avr/sfr_defs.h>
 #include <stdio.h>
 #include <util/delay.h>
 #include <time.h>
@@ -24,6 +25,8 @@
 #endif
 
 typedef unsigned char byte;
+
+uint8_t analog_reference;
 
 typedef struct {
 	unsigned char b0 : 1;
@@ -46,6 +49,8 @@ typedef union {
 	byte representation[sizeof(float)];
 } float_t;
 
+static int analogRead(uint8_t pin);
+
 int main(void) {
 	const float sampleTime = (1/SAMPLE_FREQ) * 1000;
 	const float numerator[] = {0.02008, 0.04017, 0.02008};
@@ -61,7 +66,7 @@ int main(void) {
 	DDRD = 0b11111111;
 
 	while(1) {
-		inputData = 0.0;
+		inputData = analogRead(0);
 		outputData.value = BIQUAD(inputData, denominator[0], z1, 0, 0);
 		z1 = BIQUAD(inputData, denominator[1], z2, numerator[1], outputData.value);
 		z2 = BIQUAD(inputData, denominator[2], 0, numerator[2], outputData.value);
@@ -70,4 +75,25 @@ int main(void) {
 		}
 		_delay_ms(sampleTime);
 	}
+}
+
+static int analogRead(uint8_t pin) {
+	uint8_t high, low;
+	if (pin >= 14) {
+		pin -= 14;
+	}
+	
+	#if defined(ADCSRB) && defined(MUX5)
+	ADCSRB = (ADCSRB & ~(1 << MUX5)) | (((pin >> 3) & 0x01) << MUX5);
+	#endif
+	
+	#if defined(ADMUX)
+	ADMUX = (analog_reference << 6) | (pin & 0x07);
+	#endif
+	
+	_SFR_BYTE(ADCSRA) |= _BV(ADSC);
+	loop_until_bit_is_set(ADCSRA, ADSC);
+	low  = ADCL;
+	high = ADCH;
+	return (high << 8) | low;
 }
