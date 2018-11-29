@@ -17,37 +17,13 @@
 #include <stdio.h>
 #include <util/delay.h>
 #include <time.h>
+#include "types.h"
 
 #define BIQUAD(A, B, C, D , E) ((float)((A * B) + C - (D * E)))
 
 #ifndef SAMPLE_FREQ
 #define SAMPLE_FREQ 1000
 #endif
-
-typedef unsigned char byte;
-
-uint8_t analog_reference;
-
-typedef struct {
-	unsigned char b0 : 1;
-	unsigned char b1 : 1;
-	unsigned char b2 : 1;
-	unsigned char b3 : 1;
-	unsigned char b4 : 1;
-	unsigned char b5 : 1;
-	unsigned char b6 : 1;
-	unsigned char b7 : 1;
-} bits_t;
-
-typedef union {
-	byte value;
-	bits_t representation;
-} byte_t;
-
-typedef union {
-	float value;
-	byte representation[sizeof(float)];
-} float_t;
 
 static int analogRead(uint8_t pin);
 
