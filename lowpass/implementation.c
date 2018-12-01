@@ -25,7 +25,7 @@
 #define SAMPLE_FREQ 1000
 #endif
 
-static int analogRead(uint8_t pin);
+static uint8_t analogRead(uint8_t pin);
 
 int main(void) {
 	const float sampleTime = (1/SAMPLE_FREQ) * 1000;
@@ -35,6 +35,8 @@ int main(void) {
 	static float_t outputData;
 	static float z1, z2;
 	static unsigned int i;
+	
+	ADCSRA = _BV(ADEN) | _BV(ADPS2) | _BV(ADPS1) | _BV(ADPS0);
 
 	z1 = z2 = 0.0;
 	outputData.value = 0.0;
@@ -53,23 +55,12 @@ int main(void) {
 	}
 }
 
-static int analogRead(uint8_t pin) {
-	uint8_t high, low;
+static uint8_t analogRead(uint8_t pin) {
 	if (pin >= 14) {
 		pin -= 14;
 	}
-	
-	#if defined(ADCSRB) && defined(MUX5)
-	ADCSRB = (ADCSRB & ~(1 << MUX5)) | (((pin >> 3) & 0x01) << MUX5);
-	#endif
-	
-	#if defined(ADMUX)
-	ADMUX = (analog_reference << 6) | (pin & 0x07);
-	#endif
-	
+	ADMUX = (ADMUX & 0xF0) | pin;
 	_SFR_BYTE(ADCSRA) |= _BV(ADSC);
 	loop_until_bit_is_set(ADCSRA, ADSC);
-	low  = ADCL;
-	high = ADCH;
-	return (high << 8) | low;
+	return ADC;
 }
